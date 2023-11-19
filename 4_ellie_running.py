@@ -3,11 +3,10 @@ import subprocess
 import time
 commands = [
     "cd ~/dalle-web-ui",
-    "python3 -m venv dalle_3.8 && source dalle_3.8/bin/activate",
+    "source dalle_3.8/bin/activate",
     "python3 app.py",
 ]
 
-time.sleep(3)
 for cmd in commands:
     subprocess.run(cmd, shell=True, check=True)
 
