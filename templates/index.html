@@ -24,6 +24,7 @@
 <body>
   <form id="dalleForm">
     <textarea id="promptInput" name="prompt" placeholder="Enter your prompt" required></textarea>
+    <div id="wordCount"></div>
     <div class="row">
       <select name="model" id="modelSelect">
         <option value="dall-e-3">DALL-E 3</option>
@@ -47,20 +48,14 @@
         <option value="vivid">Vivid</option>
         <option value="natural">Natural</option>
       </select>
-      <input type="text" name="user" placeholder="User identifier (optional)">
+      <input type="text" name="user" placeholder="User identifier">
     </div>
     <br>
     <div id="costEstimate"></div>
     <br><br>
     <button type="submit" id="submitButton" disabled>Generate Image</button>
-
   </form>
-  <br><br>
   <div id="imageDisplay"></div>
-  <!-- added to download the image -->
-  <button id="downloadButton" style="display: none;">Download Image</button>
-  <button id="openFolderButton" onclick="alert('Please navigate to the downloaded_images folder in your project directory.');">Open Images Folder</button>
-
   <pre id="pythonCode"></pre> <!-- Place to print the Python code -->
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -104,6 +99,23 @@
         updateCostEstimate();
       }
 
+      /*
+      function updateWordCount() {
+        var maxCount = $('#modelSelect').val() === 'dall-e-3' ? 4000 : 1000;
+        var words = $('#promptInput').val().match(/\S+/g);
+        var wordCount = words ? words.length : 0;
+        $('#wordCount').text('Word Count: ' + wordCount + '/' + maxCount);
+        var promptFilled = wordCount > 0 && wordCount <= maxCount;
+        $('#submitButton').prop('disabled', !promptFilled);
+
+        if(wordCount > maxCount) {
+          $('#wordCount').css('color', 'red');
+        } else {
+          $('#wordCount').css('color', 'black');
+        }
+      }
+      */
+
       function updateCostEstimate() {
         var model = $('#modelSelect').val();
         var quality = $('#qualitySelect').val() || "standard";
@@ -114,17 +126,14 @@
         $('#costEstimate').text('This run will cost you US $' + totalCost);
       }
 
-      $('#modelSelect, #sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateForm);
-
-      $('#promptInput').on('input', function() {
-        var promptFilled = $('#promptInput').val().length > 0;
-        $('#submitButton').prop('disabled', !promptFilled);
-        if(promptFilled) {
-          $('#submitButton').css('background-color', 'green');
-        } else {
-          $('#submitButton').css('background-color', 'gray');
-        }
+      $('#modelSelect').change(function() {
+        updateForm();
+        //updateWordCount(); // To re-validate the word count when model changes
       });
+
+      //$('#promptInput').on('input', updateWordCount);
+
+      $('#sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateCostEstimate);
 
       $('#dalleForm').submit(function(e) {
         e.preventDefault();
@@ -136,24 +145,6 @@
         pythonCode += "})";
         $('#pythonCode').text(pythonCode); // Display the code
 
-        // added to download the image
-        $.ajax({
-          type: 'POST',
-          url: '/',
-          data: formData,
-          // Inside your document ready function after the AJAX call that displays the image
-          success: function(response) {
-            $('#imageDisplay').html('<img src="' + response.image_url + '" alt="Generated Image">');
-            $('#downloadButton').show().click(function() {
-              $.post('/download_image', { image_url: response.image_url }, function(data) {
-                alert(data); // You can handle this more gracefully
-              });
-            });
-          }
-
-        });
-
-        /* this is basic. its working, but now commented cuz i want to have a user downloaded image folder opened..
         $.ajax({
           type: 'POST',
           url: '/',
@@ -162,7 +153,6 @@
             $('#imageDisplay').html('<img src="' + response.image_url + '" alt="Generated Image">');
           }
         });
-        */
       });
 
       // Initial setup call
