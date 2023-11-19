@@ -3,7 +3,7 @@ import subprocess
 import time
 commands = [
     "cd ~/dalle-web-ui",
-    "source dalle_3.8/bin/activate",
+    #"source dalle_3.8/bin/activate",
     "python3 app.py",
 ]
 
