@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DALL-E Image Generator</title>
+  <style>
+    #submitButton {
+      background-color: gray;
+    }
+    #promptInput {
+      display: block;
+      width: 100%;
+      min-height: 150px; /* Default size, adjust as needed */
+      resize: both; /* Allows resizing */
+      overflow: auto;
+      margin-bottom: 20px; /* Gives space to the next row */
+    }
+    .disabled {
+      background-color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <form id="dalleForm">
+    <textarea id="promptInput" name="prompt" placeholder="Enter your prompt" required></textarea>
+    <div class="row">
+      <select name="model" id="modelSelect">
+        <option value="dall-e-3">DALL-E 3</option>
+        <option value="dall-e-2">DALL-E 2</option>
+      </select>
+      <select name="n" id="nSelect">
+        <!-- Options will be added dynamically based on the model -->
+      </select>
+      <select name="size" id="sizeSelect">
+        <!-- Options will be added dynamically based on the model -->
+      </select>
+      <select name="quality" id="qualitySelect" class="disabled" disabled>
+        <option value="standard">Standard</option>
+        <option value="hd">HD</option>
+      </select>
+      <select name="response_format" id="responseFormatSelect">
+        <option value="url">URL</option>
+        <option value="b64_json">Base64 JSON</option>
+      </select>
+      <select name="style" id="styleSelect" class="disabled" disabled>
+        <option value="vivid">Vivid</option>
+        <option value="natural">Natural</option>
+      </select>
+      <input type="text" name="user" placeholder="User identifier (optional)">
+    </div>
+    <br>
+    <div id="costEstimate"></div>
+    <br><br>
+    <button type="submit" id="submitButton" disabled>Generate Image</button>
+
+  </form>
+  <br><br>
+  <div id="imageDisplay"></div>
+  <!-- added to download the image -->
+  <button id="downloadButton" style="display: none;">Download Image</button>
+  <button id="openFolderButton" onclick="alert('Please navigate to the downloaded_images folder in your project directory.');">Open Images Folder</button>
+
+  <pre id="pythonCode"></pre> <!-- Place to print the Python code -->
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      var costData = {
+        "dall-e-3": {
+          "standard": {"1024x1024": 0.04, "1024x1792": 0.08, "1792x1024": 0.08},
+          "hd": {"1024x1024": 0.08, "1024x1792": 0.12, "1792x1024": 0.12}
+        },
+        "dall-e-2": {
+          "1024x1024": 0.02,
+          "512x512": 0.018,
+          "256x256": 0.016
+        }
+      };
+
+      function updateForm() {
+        var modelSelected = $('#modelSelect').val();
+        $('#qualitySelect, #styleSelect').toggleClass('disabled', modelSelected === 'dall-e-2').prop('disabled', modelSelected === 'dall-e-2');
+
+        var sizeOptions = {
+          "dall-e-3": ["1024x1024", "1024x1792", "1792x1024"],
+          "dall-e-2": ["256x256", "512x512", "1024x1024"]
+        }[modelSelected];
+
+        $('#sizeSelect').empty();
+        sizeOptions.forEach(function(size) {
+          $('#sizeSelect').append($('<option>', { value: size, text: size }));
+        });
+
+        $('#nSelect').empty();
+        if(modelSelected === 'dall-e-3') {
+          $('#nSelect').append($('<option>', { value: 1, text: 1 }));
+        } else {
+          for (var i = 1; i <= 10; i++) {
+            $('#nSelect').append($('<option>', { value: i, text: i }));
+          }
+        }
+
+        updateCostEstimate();
+      }
+
+      function updateCostEstimate() {
+        var model = $('#modelSelect').val();
+        var quality = $('#qualitySelect').val() || "standard";
+        var size = $('#sizeSelect').val();
+        var cost = costData[model][quality] ? costData[model][quality][size] : costData[model][size];
+        var n = $('#nSelect').val();
+        var totalCost = (cost * n).toFixed(2);
+        $('#costEstimate').text('This run will cost you US $' + totalCost);
+      }
+
+      $('#modelSelect, #sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateForm);
+
+      $('#promptInput').on('input', function() {
+        var promptFilled = $('#promptInput').val().length > 0;
+        $('#submitButton').prop('disabled', !promptFilled);
+        if(promptFilled) {
+          $('#submitButton').css('background-color', 'green');
+        } else {
+          $('#submitButton').css('background-color', 'gray');
+        }
+      });
+
+      $('#dalleForm').submit(function(e) {
+        e.preventDefault();
+        var formData = $(this).serializeArray();
+        var pythonCode = "client.images.generate({\n";
+        formData.forEach(function(item) {
+          pythonCode += "  " + item.name + ": '" + item.value + "',\n";
+        });
+        pythonCode += "})";
+        $('#pythonCode').text(pythonCode); // Display the code
+
+        // added to download the image
+        $.ajax({
+          type: 'POST',
+          url: '/',
+          data: formData,
+          // Inside your document ready function after the AJAX call that displays the image
+          success: function(response) {
+            $('#imageDisplay').html('<img src="' + response.image_url + '" alt="Generated Image">');
+            $('#downloadButton').show().click(function() {
+              $.post('/download_image', { image_url: response.image_url }, function(data) {
+                alert(data); // You can handle this more gracefully
+              });
+            });
+          }
+
+        });
+
+        /* this is basic. its working, but now commented cuz i want to have a user downloaded image folder opened..
+        $.ajax({
+          type: 'POST',
+          url: '/',
+          data: formData,
+          success: function(response) {
+            $('#imageDisplay').html('<img src="' + response.image_url + '" alt="Generated Image">');
+          }
+        });
+        */
+      });
+
+      // Initial setup call
+      updateForm();
+    });
+  </script>
+</body>
+</html>
+
