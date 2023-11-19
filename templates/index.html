@@ -126,14 +126,17 @@
         $('#costEstimate').text('This run will cost you US $' + totalCost);
       }
 
-      $('#modelSelect').change(function() {
-        updateForm();
-        //updateWordCount(); // To re-validate the word count when model changes
+      $('#modelSelect, #sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateForm);
+
+      $('#promptInput').on('input', function() {
+        var promptFilled = $('#promptInput').val().length > 0;
+        $('#submitButton').prop('disabled', !promptFilled);
+        if(promptFilled) {
+          $('#submitButton').css('background-color', 'green');
+        } else {
+          $('#submitButton').css('background-color', 'gray');
+        }
       });
-
-      //$('#promptInput').on('input', updateWordCount);
-
-      $('#sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateCostEstimate);
 
       $('#dalleForm').submit(function(e) {
         e.preventDefault();
