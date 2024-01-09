@@ -1,4 +1,4 @@
-# DALLE WebUI
+# DALL·E WebUI
 A **Simple** WebUI for using DALL-E Models.
 ## Running Locally
 Download Scripts:
