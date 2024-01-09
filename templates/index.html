@@ -30,12 +30,6 @@
         <option value="dall-e-3">DALL-E 3</option>
         <option value="dall-e-2">DALL-E 2</option>
       </select>
-      <select name="n" id="nSelect">
-        <!-- Options will be added dynamically based on the model -->
-      </select>
-      <select name="size" id="sizeSelect">
-        <!-- Options will be added dynamically based on the model -->
-      </select>
       <select name="quality" id="qualitySelect" class="disabled" disabled>
         <option value="standard">Standard</option>
         <option value="hd">HD</option>
@@ -123,7 +117,6 @@
         var cost = costData[model][quality] ? costData[model][quality][size] : costData[model][size];
         var n = $('#nSelect').val();
         var totalCost = (cost * n).toFixed(2);
-        $('#costEstimate').text('This run will cost you US $' + totalCost);
       }
 
       $('#modelSelect, #sizeSelect, #nSelect, #qualitySelect, #styleSelect').change(updateForm);
